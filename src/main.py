@@ -37,7 +37,9 @@ class Client:
 
     def download_parameters(self, theta_d):
         new_params, indices = self.server.download_parameters(theta_d)
+        before_update = self.w_local.copy()  # ダウンロード前のローカルパラメータをコピー
         self.w_local[indices] = new_params
+        return before_update, self.w_local, indices  # ダウンロード前後のローカルパラメータを返す
 
 if __name__ == "__main__":
     # サーバーの初期化
@@ -51,6 +53,7 @@ if __name__ == "__main__":
     # ローカルデータセットでSGDを実行
     data = None  # データセット（ここでは未使用）
     gradients = client.local_sgd(data)
+    print("Initial local parameters:", client.w_local)
 
     # サーバーに勾配をアップロード
     theta_u = 0.2
@@ -58,9 +61,14 @@ if __name__ == "__main__":
 
     # サーバーからパラメータをダウンロード
     theta_d = 0.2
-    client.download_parameters(theta_d)
+    before_update, after_update, updated_indices = client.download_parameters(theta_d)
 
     # 結果を表示
-    print("Updated local parameters:", client.w_local)
+    print("Updated local parameters:", after_update)
     print("Global parameters on server:", server.w_global)
 
+    # ダウンロード前後の差分を表示
+    print("Indices of updated parameters:", updated_indices)
+    print("Parameters before update:", before_update[updated_indices])
+    print("Parameters after update:", after_update[updated_indices])
+    print("Difference:", after_update[updated_indices] - before_update[updated_indices])
